@@ -1,3 +1,5 @@
+local Delaunay = require 'Delaunay'
+
 -- gets the centroid of a list of edges
 function calculateCentroid(edges)
     local centroid = { x = 0, y = 0 }
@@ -84,7 +86,11 @@ function love.load()
         table.insert(colors, col)
     end
 
-    -- Perform Lloyd's algorithm iterations (you can change the number of iterations)
+    -- Perform Lloyd's algorithm iterations.
+    -- Lloyd's algorithm is a method used to find the 
+    -- centroids of clusters in data by iteratively 
+    -- adjusting their positions based on the data points 
+    -- closest to them.
     voronoiCells = {}
     local numIterations = 2
     for i = 1, numIterations do
@@ -99,6 +105,23 @@ function love.load()
             points[j].y = centroid.y
         end
     end
+
+    -- Create a graph for Delaunay's results.
+    local Point    = Delaunay.Point
+
+    -- Creating 10 random points
+    local delPoints = {}
+    for i = 1, 200 do
+        delPoints[i] = Point(points[i].x, points[i].y)
+    end
+
+    -- Triangulating de convex polygon made by those points
+    triangles = Delaunay.triangulate(unpack(delPoints))
+
+    -- Printing the results
+    -- for i, triangle in ipairs(triangles) do
+    --     print(triangle)
+    -- end
 end
 
 function love.mousemoved( x, y, dx, dy, istouch )
@@ -136,6 +159,10 @@ function love.draw()
     love.graphics.setColor(0,0,0)
     for _, point in ipairs(points) do
         love.graphics.points(point.x, point.y)  -- Draw points
+    end
+
+    for _, tri in ipairs(triangles) do
+        love.graphics.polygon("line", tri.p1.x, tri.p1.y, tri.p2.x, tri.p2.y, tri.p3.x, tri.p3.y)
     end
 
     -- Draw Debug Info
