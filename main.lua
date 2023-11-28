@@ -1,3 +1,53 @@
+-- gets the centroid of a list of edges
+function calculateCentroid(edges)
+    local centroid = { x = 0, y = 0 }
+
+    for _, edge in ipairs(edges) do
+        centroid.x = centroid.x + edge.x
+        centroid.y = centroid.y + edge.y
+    end
+
+    centroid.x = centroid.x / #edges
+    centroid.y = centroid.y / #edges
+
+    return centroid
+end
+
+-- for every point in the screen get the closest reference point
+function createVoronoiCells(points)
+    local voronoiCells = {}
+
+    for i = 1, #points do
+        local cell = {}
+        cell.x = points[i].x
+        cell.y = points[i].y
+        cell.edges = {}
+
+        table.insert(voronoiCells, cell)
+    end
+
+    for y = 0, love.graphics.getHeight() do
+        for x = 0, love.graphics.getWidth() do
+            local closestPointIndex = 1
+            local closestDistance = math.huge
+
+            for i, point in ipairs(points) do
+                local distance = math.sqrt((x - point.x)^2 + (y - point.y)^2)
+
+                if distance < closestDistance then
+                    closestDistance = distance
+                    closestPointIndex = i
+                end
+            end
+
+            local cell = voronoiCells[closestPointIndex]
+            table.insert(cell.edges, { x = x, y = y })
+        end
+    end
+
+    return voronoiCells
+end
+
 function love.load()
     --variables
     gameWidth = 640
@@ -11,6 +61,44 @@ function love.load()
 
     vMouse = {x=0, y=0}
     vClicked = {x=-1, y = -1}
+
+    love.graphics.setPointSize(4)
+
+    points = {}  -- Table to store points
+
+    -- Generate 200 random points with x and y coordinates
+    for i = 1, 200 do
+        local x = love.math.random(0, love.graphics.getWidth())
+        local y = love.math.random(0, love.graphics.getHeight())
+        table.insert(points, { x = x, y = y })
+    end
+
+    -- create a table with 200 random colors
+    colors = {}
+
+    for i = 1, 200 do
+        local col = {}
+        col.r = math.random()
+        col.g = math.random()
+        col.b = math.random()
+        table.insert(colors, col)
+    end
+
+    -- Perform Lloyd's algorithm iterations (you can change the number of iterations)
+    voronoiCells = {}
+    local numIterations = 2
+    for i = 1, numIterations do
+        -- Create Voronoi cells for current points configuration
+        voronoiCells = createVoronoiCells(points)
+
+        -- Update points to centroids of their Voronoi cells
+        for j, _ in ipairs(points) do
+            local cell = voronoiCells[j]
+            local centroid = calculateCentroid(cell.edges)
+            points[j].x = centroid.x
+            points[j].y = centroid.y
+        end
+    end
 end
 
 function love.mousemoved( x, y, dx, dy, istouch )
@@ -20,6 +108,8 @@ end
 
 function love.mousepressed(x,y,button, istouch)
 	if button == 1 then
+        vClicked.x = x
+        vClicked.y = y
 	end
 end
 
@@ -28,7 +118,25 @@ end
 
 function love.draw()
     love.graphics.setBackgroundColor(1,1,1)
-    love.graphics.setColor(1,1,1)
+    love.graphics.setColor(0,0,0)
+
+    -- Draw Voronoi cells
+    local colIndex = 1
+    for _, cell in ipairs(voronoiCells) do
+        love.graphics.setColor(colors[colIndex].r, colors[colIndex].g, colors[colIndex].b)  -- Random cell color
+        
+        -- Draw edges of each cell
+        for _, edge in ipairs(cell.edges) do
+            love.graphics.points(edge.x, edge.y)
+        end
+
+        colIndex = colIndex + 1
+    end
+
+    love.graphics.setColor(0,0,0)
+    for _, point in ipairs(points) do
+        love.graphics.points(point.x, point.y)  -- Draw points
+    end
 
     -- Draw Debug Info
     --draw UI
