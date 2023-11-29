@@ -1,5 +1,7 @@
 local Delaunay = require 'Delaunay'
 
+numberOfPoints = 200
+
 -- gets the centroid of a list of edges
 function calculateCentroid(edges)
     local centroid = { x = 0, y = 0 }
@@ -68,17 +70,17 @@ function love.load()
 
     points = {}  -- Table to store points
 
-    -- Generate 200 random points with x and y coordinates
-    for i = 1, 200 do
+    -- Generate random points with x and y coordinates
+    for i = 1, numberOfPoints do
         local x = love.math.random(0, love.graphics.getWidth())
         local y = love.math.random(0, love.graphics.getHeight())
         table.insert(points, { x = x, y = y })
     end
 
-    -- create a table with 200 random colors
+    -- create a table with random colors
     colors = {}
 
-    for i = 1, 200 do
+    for i = 1, numberOfPoints do
         local col = {}
         col.r = math.random()
         col.g = math.random()
@@ -107,11 +109,11 @@ function love.load()
     end
 
     -- Create a graph for Delaunay's results.
-    local Point    = Delaunay.Point
+    local Point = Delaunay.Point
 
-    -- Creating 10 random points
+    -- Pass our random points to the Delaunay's library point format
     local delPoints = {}
-    for i = 1, 200 do
+    for i = 1, numberOfPoints do
         delPoints[i] = Point(points[i].x, points[i].y)
     end
 
@@ -122,6 +124,8 @@ function love.load()
     -- for i, triangle in ipairs(triangles) do
     --     print(triangle)
     -- end
+
+    love.graphics.setLineStyle( "smooth" )
 end
 
 function love.mousemoved( x, y, dx, dy, istouch )
