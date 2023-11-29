@@ -1,7 +1,7 @@
 -- (Directed) graph using a table of tables data structure,
 -- allowing for amortized average case constant time insertion, deletion & traversal
 
-local table_heap = require("data_structures.table_heap")
+local table_heap = require("table_heap")
 
 local graph = {}
 

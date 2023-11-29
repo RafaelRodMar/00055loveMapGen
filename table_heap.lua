@@ -1,4 +1,4 @@
-local heap = require("data_structures.heap")
+local heap = require("heap")
 
 -- Min. heap plus Lua (hash) table to allow updating the stored values
 local table_heap = {}

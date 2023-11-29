@@ -1,4 +1,6 @@
+-- Delaunay triangulation
 local Delaunay = require 'Delaunay'
+local Graph = require 'graph'
 
 numberOfPoints = 200
 
@@ -117,13 +119,97 @@ function love.load()
         delPoints[i] = Point(points[i].x, points[i].y)
     end
 
-    -- Triangulating de convex polygon made by those points
+    -- Generate the triangles.
     triangles = Delaunay.triangulate(unpack(delPoints))
 
     -- Printing the results
     -- for i, triangle in ipairs(triangles) do
     --     print(triangle)
     -- end
+
+    -- Create a graph. The first graph has nodes for each polygon and edges between adjacent polygons.
+    -- Use example:
+    -- local Graph = require("graph") -- Replace "graph" with the actual file/module name
+
+    -- -- Creating an empty graph
+    -- local myGraph = Graph.new()
+
+    -- -- Adding nodes
+    -- myGraph:add_node("A")
+    -- myGraph:add_node("B")
+    -- myGraph:add_node("C")
+
+    -- -- Adding edges between nodes
+    -- myGraph:add_edge("A", "B")
+    -- myGraph:add_edge("B", "C")
+    -- myGraph:add_edge("C", "A")
+
+    -- -- Setting weights
+    -- myGraph:set_weight("A", "B", 5)
+    -- myGraph:set_weight("B", "C", 3)
+    -- myGraph:set_weight("C", "A", 2)
+
+    -- to get the number of Nodes in the graph: 
+    -- local numNodes = 0
+    -- for _ in myGraph:nodes() do
+    --     numNodes = numNodes + 1
+    -- end
+
+    -- print("Number of nodes:", numNodes)
+
+    polygonGraph = Graph.new()
+    -- each point determines a polygon, so:
+    checkPointsTable = {} -- this table is for checking what point number is given its coordinates.
+    for i = 1, #delPoints do
+        polygonGraph:add_node(i)
+        checkPointsTable[delPoints[i].x] = {}
+        checkPointsTable[delPoints[i].x][delPoints[i].y] = i
+    end
+
+    -- now the triangles tell us the edges between polygons
+    for i=1, #triangles do
+        -- get the three points
+        local p1, p2, p3 = triangles[i].p1, triangles[i].p2, triangles[i].p3
+        -- identify the number of polygon
+        local pol1 = checkPointsTable[p1.x][p1.y]
+        local pol2 = checkPointsTable[p2.x][p2.y]
+        local pol3 = checkPointsTable[p3.x][p3.y]
+        if not polygonGraph:has_edge(pol1, pol2) then
+            polygonGraph:add_edge(pol1, pol2)
+        end
+        if not polygonGraph:has_edge(pol2, pol1) then
+            polygonGraph:add_edge(pol2, pol1)
+        end
+        if not polygonGraph:has_edge(pol1, pol3) then
+            polygonGraph:add_edge(pol1, pol3)
+        end
+        if not polygonGraph:has_edge(pol3, pol1) then
+            polygonGraph:add_edge(pol3, pol1)
+        end
+        if not polygonGraph:has_edge(pol2, pol3) then
+            polygonGraph:add_edge(pol2, pol3)
+        end
+        if not polygonGraph:has_edge(pol3, pol2) then
+            polygonGraph:add_edge(pol3, pol2)
+        end
+    end
+
+    checkPointsTable = {} -- data not needed anymore
+
+    -- to get the number of Nodes in the graph: 
+    local numNodes = 0
+    for _ in polygonGraph:nodes() do
+        numNodes = numNodes + 1
+    end
+
+    print("Number of nodes:", numNodes)
+
+    local numEdges = 0
+    for _ in polygonGraph:edges() do
+        numEdges = numEdges + 1
+    end
+
+    print("Number of edges:", numEdges)
 
     love.graphics.setLineStyle( "smooth" )
 end
