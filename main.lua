@@ -1,6 +1,7 @@
 -- Delaunay triangulation
 local Delaunay = require 'Delaunay'
 local Graph = require 'graph'
+local Voronoi = require 'voronoi'
 
 numberOfPoints = 10
 
