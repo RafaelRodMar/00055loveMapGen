@@ -2,7 +2,7 @@
 local Delaunay = require 'Delaunay'
 local Graph = require 'graph'
 
-numberOfPoints = 200
+numberOfPoints = 10
 
 -- gets the centroid of a list of edges
 function calculateCentroid(edges)
@@ -54,6 +54,49 @@ function createVoronoiCells(points)
     return voronoiCells
 end
 
+function calculateCircumcentre(x1, y1, x2, y2, x3, y3)
+    -- Calculate midpoints of sides
+    local midx1 = (x1 + x2) / 2
+    local midy1 = (y1 + y2) / 2
+    local midx2 = (x2 + x3) / 2
+    local midy2 = (y2 + y3) / 2
+    local midx3 = (x3 + x1) / 2
+    local midy3 = (y3 + y1) / 2
+
+    -- Calculate slopes of sides
+    local slope1 = (y2 - y1) / (x2 - x1)
+    local slope2 = (y3 - y2) / (x3 - x2)
+    local slope3 = (y1 - y3) / (x1 - x3)
+
+    -- Calculate perpendicular slopes
+    local perp_slope1 = -1 / slope1
+    local perp_slope2 = -1 / slope2
+    local perp_slope3 = -1 / slope3
+
+    -- Calculate y-intercepts of perpendicular bisectors
+    local y_intercept1 = midy1 - perp_slope1 * midx1
+    local y_intercept2 = midy2 - perp_slope2 * midx2
+    local y_intercept3 = midy3 - perp_slope3 * midx3
+
+    -- Calculate circumcentre (intersection point of perpendicular bisectors)
+    local circumcentre_x = (y_intercept3 - y_intercept1) / (perp_slope1 - perp_slope3)
+    local circumcentre_y = perp_slope1 * circumcentre_x + y_intercept1
+
+    return circumcentre_x, circumcentre_y
+end
+
+-- Example coordinates of triangle vertices
+-- local x1, y1 = 0, 0
+-- local x2, y2 = 4, 0
+-- local x3, y3 = 2, 3
+
+-- Calculate circumcentre
+-- local circumcentre_x, circumcentre_y = calculateCircumcentre(x1, y1, x2, y2, x3, y3)
+
+-- Output circumcentre coordinates
+-- print("Circumcentre coordinates: (" .. circumcentre_x .. ", " .. circumcentre_y .. ")")
+
+
 function love.load()
     --variables
     gameWidth = 640
@@ -95,12 +138,9 @@ function love.load()
     -- centroids of clusters in data by iteratively 
     -- adjusting their positions based on the data points 
     -- closest to them.
-    voronoiCells = {}
+    voronoiCells = createVoronoiCells(points) -- Create Voronoi cells for current points configuration
     local numIterations = 2
     for i = 1, numIterations do
-        -- Create Voronoi cells for current points configuration
-        voronoiCells = createVoronoiCells(points)
-
         -- Update points to centroids of their Voronoi cells
         for j, _ in ipairs(points) do
             local cell = voronoiCells[j]
@@ -108,6 +148,9 @@ function love.load()
             points[j].x = centroid.x
             points[j].y = centroid.y
         end
+
+        -- Update the voronoi diagram with the new points
+        voronoiCells = createVoronoiCells(points)
     end
 
     -- Create a graph for Delaunay's results.
@@ -211,6 +254,29 @@ function love.load()
 
     print("Number of edges:", numEdges)
 
+    -- now let's create the second graph. The nodes of this graph are the corners of the voronoi diagram.
+    -- The voronoi corners are the circumcentre of the triangles
+    corners = {}
+    for i=1, #triangles do
+        local cornerCoords = {}
+        cornerCoords.x, cornerCoords.y = calculateCircumcentre(triangles[i].p1.x, triangles[i].p1.y,triangles[i].p2.x, triangles[i].p2.y,triangles[i].p3.x, triangles[i].p3.y)
+        -- check to what polygon this point belongs
+        local closestPointIndex = 1
+        local closestDistance = math.huge
+
+        for i, point in ipairs(delPoints) do
+            local distance = math.sqrt((cornerCoords.x - point.x)^2 + (cornerCoords.y - point.y)^2)
+
+            if distance < closestDistance then
+                closestDistance = distance
+                closestPointIndex = i
+            end
+        end
+        cornerCoords.polygon = closestPointIndex
+
+        corners[i] = cornerCoords
+    end
+
     love.graphics.setLineStyle( "smooth" )
 end
 
@@ -247,13 +313,34 @@ function love.draw()
     end
 
     love.graphics.setColor(0,0,0)
+    local num = 1
     for _, point in ipairs(points) do
-        love.graphics.points(point.x, point.y)  -- Draw points
+        love.graphics.points(point.x, point.y)  -- Draw seed points
+        love.graphics.print(num, point.x, point.y)
+        num = num + 1
     end
 
+    -- draw Delaunay's triangulation triangles
     for _, tri in ipairs(triangles) do
         love.graphics.polygon("line", tri.p1.x, tri.p1.y, tri.p2.x, tri.p2.y, tri.p3.x, tri.p3.y)
     end
+
+    -- draw voronoi corners
+    love.graphics.setColor(1,1,1)
+    for _, corner in ipairs(corners) do
+        love.graphics.points(corner.x, corner.y)
+        love.graphics.print(corner.polygon, corner.x, corner.y)
+    end
+
+    -- draw edges between voronoi corners
+    -- love.graphics.setColor(0,0,1)
+    -- for x=1, #corners - 1 do
+    --     for y=x+1, #corners do
+    --         if polygonGraph:has_edge(corners[x].polygon, corners[y].polygon) then
+    --             love.graphics.line(corners[x].x, corners[x].y, corners[y].x, corners[y].y)
+    --         end
+    --     end
+    -- end
 
     -- Draw Debug Info
     --draw UI
