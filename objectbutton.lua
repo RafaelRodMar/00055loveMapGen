@@ -27,6 +27,7 @@ function objectbutton:mousepressed(x, y, button, istouch, presses)
             if self.name == "showseeds" then showseeds = not showseeds end
             if self.name == "showcentroids" then showcentroids = not showcentroids end
             if self.name == "showrelationshiplines" then showrelationshiplines = not showrelationshiplines end
+            self.pressed = not self.pressed
     end
 end
 
@@ -34,13 +35,16 @@ function objectbutton:update(dt)
 end
 
 function objectbutton:draw()
+    local text = ""
     if self.pressed == false then
         love.graphics.setColor(0.5,0.5,0.5)
+        text = "Hide " .. string.sub(self.text,5)
     else
         love.graphics.setColor(0,1,0)
+        text = "Show " .. string.sub(self.text,5)
     end
     love.graphics.rectangle("fill", self.posx, self.posy, self.width, self.height)
     love.graphics.setColor(0,0,0)
-    love.graphics.print(self.text, self.posx + 2, self.posy + 2)
+    love.graphics.print(text, self.posx + 2, self.posy + 2)
     love.graphics.setColor(1,1,1)
 end
