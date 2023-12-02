@@ -19,7 +19,7 @@ function love.load()
     love.graphics.setPointSize(4)
 
     -- generate the voronoi diagram
-    pointcount = 15 * 15
+    pointcount = 225 --15 * 15 --295
 
     -- create a table with random colors
     colors = {}
