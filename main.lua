@@ -1,6 +1,42 @@
 local Voronoi = require 'voronoi'
+require 'perlinnoise'
 local Graph = require 'graph'
 require 'objectbutton'
+
+-- interpret a value in a range as a value in other range
+function map(value, start1, stop1, start2, stop2)
+    return start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1))
+end
+
+-- By Pedro Gimeno, donated to the public domain
+function isPointInPolygon(x, y, poly)
+    local x1, y1, x2, y2
+    local len = #poly
+    x2, y2 = poly[len - 1], poly[len]
+    local wn = 0
+    for idx = 1, len, 2 do
+        x1, y1 = x2, y2
+        x2, y2 = poly[idx], poly[idx + 1]
+
+        if y1 > y then
+            if (y2 <= y) and (x1 - x) * (y2 - y) < (x2 - x) * (y1 - y) then
+                wn = wn + 1
+            end
+        else
+            if (y2 > y) and (x1 - x) * (y2 - y) > (x2 - x) * (y1 - y) then
+                wn = wn - 1
+            end
+        end
+    end
+
+    -- wn is the winding number (the number of times the polygon turns around 
+    -- the given point). It allows you to choose what rule to use for considering 
+    -- a point to be inside the polygon; see https://en.wikipedia.org/wiki/Even-odd_rule.
+    -- RNavega used the even-odd rule, so I made mine compatible with that. But if you 
+    -- prefer the non-zero winding rule, you can change it to wn ~= 0.
+    -- return wn % 2 ~= 0 -- even/odd rule
+    return wn ~= 0
+end
 
 function love.load()
     --variables
@@ -33,6 +69,26 @@ function love.load()
     end
 
     genvoronoi = Voronoi:new(pointcount,3,0,0,640,gameHeight)
+
+    -- generate polygon (perlin noise)
+    polygon = {}
+    local perlin_TWOPI = 6.28318530718
+    local noiseMax = 5  -- 0.1 is a circle, 150 is chaotic.
+    for a=0, perlin_TWOPI, 0.1 do
+        local xoff = map(math.cos(a), -1, 1, 0, noiseMax)
+        local yoff = map(math.sin(a), -1, 1, 0, noiseMax)
+        local r = map(perlin:noise(xoff,yoff),-1,1,100,250)
+        local x = r * math.cos(a) + 640 / 2
+        local y = r * math.sin(a) + gameHeight / 2
+        table.insert(polygon, x)
+        table.insert(polygon,y)
+    end
+
+    for index,point in pairs(genvoronoi.points) do
+        if isPointInPolygon(point.x, point.y, polygon) == false then
+            colors[index] = {r=0, g=0, b=1}
+        end
+    end
 
     -- create some buttons
     buttons = {}
@@ -150,4 +206,7 @@ function draw(ivoronoi)
             end
         end
     end
+
+    -- draw a random polygon
+    love.graphics.polygon("line", polygon)
 end
