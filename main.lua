@@ -84,27 +84,34 @@ function love.load()
         table.insert(polygon,y)
     end
 
+    -- set colors for land / sea
     for index,point in pairs(genvoronoi.points) do
         if isPointInPolygon(point.x, point.y, polygon) == false then
             colors[index] = {r=0, g=0, b=1}
+        else
+            colors[index] = {r=0.698, g=0.651, b=0.580}
         end
     end
 
     -- create some buttons
     buttons = {}
 
-    table.insert(buttons, objectbutton:new("showpolygons", "Show polygons", 0, 650, 20))
-    table.insert(buttons, objectbutton:new("showsegments", "Show segments", 0, 650, 40))
+    table.insert(buttons, objectbutton:new("showpolygons", "Hide polygons", 0, 650, 20))
+    buttons[1].pressed = true
+    table.insert(buttons, objectbutton:new("showsegments", "Hide segments", 0, 650, 40))
+    buttons[2].pressed = true
     table.insert(buttons, objectbutton:new("showcorners", "Show corners", 0, 650, 60))
     table.insert(buttons, objectbutton:new("showseeds", "Show seeds", 0, 650, 80))
     table.insert(buttons, objectbutton:new("showcentroids", "Show centroids", 0, 650, 100))
     table.insert(buttons, objectbutton:new("showrelationshiplines", "Show relationship lines", 0, 650, 120))
+    table.insert(buttons, objectbutton:new("polygon", "Show random polygon", 0, 650, 140))
     showpolygons = true
     showsegments = true
-    showcorners = true
-    showseeds = true
-    showcentroids = true
-    showrelationshiplines = true
+    showcorners = false
+    showseeds = false
+    showcentroids = false
+    showrelationshiplines = false
+    showrandompolygon = false
 end
 
 function love.mousemoved( x, y, dx, dy, istouch )
@@ -208,5 +215,7 @@ function draw(ivoronoi)
     end
 
     -- draw a random polygon
-    love.graphics.polygon("line", polygon)
+    if showrandompolygon then
+        love.graphics.polygon("line", polygon)
+    end
 end
