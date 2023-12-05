@@ -1,6 +1,5 @@
 local Voronoi = require 'voronoi'
 require 'perlinnoise'
-local Graph = require 'graph'
 require 'objectbutton'
 
 -- interpret a value in a range as a value in other range
