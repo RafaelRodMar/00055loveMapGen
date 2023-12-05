@@ -88,8 +88,6 @@ function love.load()
     for index,point in pairs(genvoronoi.points) do
         if isPointInPolygon(point.x, point.y, polygon) == false then
             colors[index] = {r=0, g=0, b=1}
-        else
-            colors[index] = {r=0.698, g=0.651, b=0.580}
         end
     end
 
